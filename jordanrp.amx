@@ -1,0 +1,106 @@
+#include <a_samp>
+#include <dini>
+
+#define COLOR_WHITE 0xFFFFFFAA
+#define COLOR_RED 0xFF0000AA
+#define COLOR_GREEN 0x00FF00AA
+
+new LoggedIn[MAX_PLAYERS];
+
+public OnGameModeInit()
+{
+    SetGameModeText("Jordan RP");
+    AddPlayerClass(0, 1958.3783,1343.1572,15.3746, 270.0, 0, 0, 0, 0, 0, 0);
+    return 1;
+}
+
+public OnPlayerConnect(playerid)
+{
+    new name[MAX_PLAYER_NAME], path[64];
+    GetPlayerName(playerid, name, sizeof(name));
+    format(path, sizeof(path), "Users/%s.ini", name);
+
+    if (fexist(path))
+    {
+        SendClientMessage(playerid, COLOR_WHITE, "مرحبا بك! سجل دخولك باستخدام: /login [كلمة السر]");
+    }
+    else
+    {
+        SendClientMessage(playerid, COLOR_WHITE, "أهلاً بك جديد! سجّل حسابك باستخدام: /register [كلمة السر]");
+    }
+
+    LoggedIn[playerid] = 0;
+    return 1;
+}
+
+public OnPlayerCommandText(playerid, cmdtext[])
+{
+    new cmd[32], tmp[128];
+    sscanf(cmdtext, "%s %s", cmd, tmp);
+
+    if(strcmp(cmd, "/register", true) == 0)
+    {
+        new name[MAX_PLAYER_NAME], path[64];
+        GetPlayerName(playerid, name, sizeof(name));
+        format(path, sizeof(path), "Users/%s.ini", name);
+
+        if(fexist(path))
+        {
+            SendClientMessage(playerid, COLOR_RED, "أنت مسجّل بالفعل! استخدم /login [كلمة السر].");
+            return 1;
+        }
+
+        if(strlen(tmp) < 4)
+        {
+            SendClientMessage(playerid, COLOR_RED, "كلمة السر يجب أن تكون 4 حروف أو أكثر.");
+            return 1;
+        }
+
+        dini_Create(path);
+        dini_Set(path, "password", tmp);
+        LoggedIn[playerid] = 1;
+        SendClientMessage(playerid, COLOR_GREEN, "تم تسجيل الحساب بنجاح! يمكنك اللعب الآن.");
+        return 1;
+    }
+
+    if(strcmp(cmd, "/login", true) == 0)
+    {
+        new name[MAX_PLAYER_NAME], path[64];
+        GetPlayerName(playerid, name, sizeof(name));
+        format(path, sizeof(path), "Users/%s.ini", name);
+
+        if(!fexist(path))
+        {
+            SendClientMessage(playerid, COLOR_RED, "لم يتم إيجاد الحساب! استخدم /register [كلمة السر].");
+            return 1;
+        }
+
+        new savedPass[64];
+        dini_Get(path, "password", savedPass);
+
+        if(strcmp(tmp, savedPass, false) == 0)
+        {
+            LoggedIn[playerid] = 1;
+            SendClientMessage(playerid, COLOR_GREEN, "تم تسجيل الدخول بنجاح!");
+        }
+        else
+        {
+            SendClientMessage(playerid, COLOR_RED, "كلمة السر خاطئة.");
+        }
+        return 1;
+    }
+
+    if(strcmp(cmd, "/help", true) == 0)
+    {
+        if(!LoggedIn[playerid])
+        {
+            SendClientMessage(playerid, COLOR_RED, "يجب أن تسجل الدخول أولاً!");
+            return 1;
+        }
+
+        SendClientMessage(playerid, COLOR_WHITE, "/help - أوامر المساعدة");
+        return 1;
+    }
+
+    return 0;
+}
